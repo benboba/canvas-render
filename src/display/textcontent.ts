@@ -2,10 +2,9 @@
  * 文本类
  */
 
-import Sprite, { SpriteOption, HitTestResult } from './sprite';
-import Point from '../geom/point';
-import Rectangle from '../geom/rectangle';
-import CEvent from '../event/event';
+import { Point } from '../geom/point';
+import { Rectangle } from '../geom/rectangle';
+import { HitTestResult, Sprite, SpriteOption } from './sprite';
 
 interface TextCacheItem {
 	text: string;
@@ -66,7 +65,7 @@ let defaultStyle: TextContentStyle = {
 	whiteSpace: ''
 };
 
-class TextContent extends Sprite {
+export class TextContent extends Sprite {
 	constructor(option: TextContentOption = {}) {
 		super(option);
 
@@ -373,5 +372,3 @@ class TextContent extends Sprite {
 		}
 	}
 }
-
-export default TextContent;

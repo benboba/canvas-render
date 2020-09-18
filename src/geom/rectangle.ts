@@ -3,12 +3,12 @@
  * 主要用于hitTest
  */
 
-interface Point {
+interface IPoint {
 	x: number;
 	y: number;
 }
 
-class Rectangle {
+export class Rectangle {
 	constructor(x = 0, y = 0, width = 0, height = 0) {
 		this.x = x;
 		this.y = y;
@@ -21,7 +21,7 @@ class Rectangle {
 	width: number;
 	height: number;
 
-	hitTest(target: Point | Rectangle) {
+	hitTest(target: IPoint | Rectangle) {
 		if (target instanceof Rectangle) {
 			let tgt = target as Rectangle;
 			return !(tgt.x > this.x + this.width || tgt.x + tgt.width < this.x || tgt.y > this.y + this.height || tgt.y + tgt.height < this.y);
@@ -30,5 +30,3 @@ class Rectangle {
 		}
 	}
 }
-
-export default Rectangle;

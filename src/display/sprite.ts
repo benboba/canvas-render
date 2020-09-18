@@ -1,13 +1,13 @@
 /*
  * 精灵类，实现子对象管理相关功能
  */
-import EventDispatcher from '../base/eventdispatcher';
-import CEvent from '../event/event';
-import CTouchEvent from '../event/touchevent';
-import Point from '../geom/point';
-import Rectangle from '../geom/rectangle';
-import { IEventObject, IFn, TEmptyFn } from '../types';
-import Stage from './stage';
+import { EventDispatcher } from '../base/eventdispatcher';
+import { CEvent } from '../event/event';
+import { CTouchEvent } from '../event/touchevent';
+import { Matrix } from '../geom/matrix';
+import { Point } from '../geom/point';
+import { Rectangle } from '../geom/rectangle';
+import { IEventObject, IFn, ISprite, IStage, TEmptyFn } from '../types';
 
 export interface HitTestResult {
 	target: Sprite | null;
@@ -32,7 +32,7 @@ export interface SpriteOption {
 	transform?: string;
 }
 
-class Sprite extends EventDispatcher {
+export class Sprite extends EventDispatcher implements ISprite {
 	constructor(option: SpriteOption = {}) {
 		super();
 
@@ -54,8 +54,8 @@ class Sprite extends EventDispatcher {
 
 	protected keyReg = /x|y|name|alpha|visible|pointerEvents|parent|stage|extraRender|extraHitTest|transform/;
 
-	private _children: Sprite[];
-	get children(): Sprite[] {
+	private _children: ISprite[];
+	get children() {
 		return this._children;
 	}
 
@@ -96,8 +96,8 @@ class Sprite extends EventDispatcher {
 
 	visible: boolean;
 	pointerEvents: boolean;
-	parent?: Sprite | null;
-	stage?: Stage | null;
+	parent?: ISprite | null;
+	stage?: IStage | null;
 
 	private _extraRender;
 	get extraRender() {
@@ -147,27 +147,38 @@ class Sprite extends EventDispatcher {
 	}
 
 	setTransform(newtransform: string): Sprite {
-		let div = document.createElement('div');
-		document.body.appendChild(div);
-		div.style.transform = newtransform;
-
-		let style = getComputedStyle(div);
-		const transform = style.transform;
-		document.body.removeChild(div);
-
-		if (transform !== 'none') {
-			let transtr: string[] = transform.replace(/matrix\((.+)\)/, function (...args) {
-				return args[1];
-			}).split(/\s*,\s*/);
-
-			let trans: [number, number, number, number, number, number] = [1, 0, 0, 1, 0, 0];
-			for (let i: number = 0, l: number = transtr.length; i < l; i++) {
-				trans[i] = parseFloat(transtr[i]);
+		var mtx = /matrix\((.+?)\)/.exec(newtransform);
+		if (mtx) {
+			this._transform = mtx[1].split(/\s*,\s*/).map(function (n) { return parseFloat(n); }) as Sprite['_transform'];
+		} else {
+			var translate = /translate\((.+?)\)/.exec(newtransform);
+			var scale = /scale\((.+?)\)/.exec(newtransform);
+			var rotate = /rotate\((.+?)\)/.exec(newtransform);
+			var matrix = new Matrix();
+			if (translate) {
+				var translate_arg = translate[1].split(/\s*,\s*/);
+				matrix.translate(parseFloat(translate_arg[0]), parseFloat(translate_arg[1]));
 			}
-
-			this._transform = trans;
+			if (scale) {
+				var scale_arg = scale[1].split(/\s*,\s*/);
+				if (!scale_arg[1]) {
+					matrix.scale(parseFloat(scale_arg[0]));
+				}
+				else {
+					matrix.scale(parseFloat(scale_arg[0]), parseFloat(scale_arg[1]));
+				}
+			}
+			if (rotate) {
+				var rotate_arg = rotate[1];
+				if (rotate_arg.indexOf('deg') > 0) {
+					matrix.rotate(parseFloat(rotate_arg) * Math.PI / 180);
+				}
+				else {
+					matrix.rotate(parseFloat(rotate_arg));
+				}
+			}
+			this._transform = matrix.vals as Sprite['_transform'];
 		}
-
 		return this;
 	}
 
@@ -176,12 +187,11 @@ class Sprite extends EventDispatcher {
 	 */
 	addedToStage(): void {
 		const l = this.numChildren;
-		const children: Sprite[] = this.children;
 		const stage = this.stage;
 
 		if (l && stage) {
 			for (let i = 0; i < l; i++) {
-				children[i].stage = stage;
+				this.children[i].stage = stage;
 			}
 		}
 	}
@@ -210,6 +220,11 @@ class Sprite extends EventDispatcher {
 
 		ctx.save();
 		ctx.globalAlpha = alpha;
+		if (this.transform) {
+			ctx.translate(this.x, this.y);
+			ctx.transform.apply(ctx, this.transform);
+			ctx.translate(-this.x, -this.y);
+		}
 		ctx.translate(x, y);
 		this.render();
 
@@ -223,7 +238,7 @@ class Sprite extends EventDispatcher {
 		 * 渲染每个子类
 		 */
 		for (let i: number = 0, l: number = this.numChildren; i < l; i++) {
-			let child: Sprite = this.children[i];
+			let child = this.children[i];
 			// 此处修正所有子对象的parent属性
 			if (child.parent !== this) {
 				child.parent = this;
@@ -283,7 +298,7 @@ class Sprite extends EventDispatcher {
 		return new Rectangle(x, y, width, height);
 	}
 
-	appendChild(...children: Sprite[]): Sprite {
+	appendChild(...children: Sprite[]) {
 		let depth: number = this.numChildren;
 		for (let i: number = 0, l: number = children.length; i < l; i++) {
 			let child: any = children[i];
@@ -294,8 +309,8 @@ class Sprite extends EventDispatcher {
 		return this;
 	}
 
-	appendChildAt(el: Sprite, i: number): Sprite {
-		if (!(el instanceof Stage) && !isNaN(i)) {
+	appendChildAt(el: Sprite, i: number) {
+		if (!isNaN(i)) {
 			if (el.parent) {
 				el.parent.removeChild(el);
 			}
@@ -312,7 +327,7 @@ class Sprite extends EventDispatcher {
 		return this;
 	}
 
-	remove(): Sprite {
+	remove() {
 		this.destroyEvent();
 		this.stage = null;
 
@@ -325,7 +340,7 @@ class Sprite extends EventDispatcher {
 		return this;
 	}
 
-	removeChild(el: Sprite): Sprite {
+	removeChild(el: Sprite) {
 		let children = this.children;
 		for (let d = this.numChildren; d--;) {
 			if (children[d] === el) {
@@ -338,19 +353,19 @@ class Sprite extends EventDispatcher {
 		return this;
 	}
 
-	removeChildAt(i: number): Sprite {
+	removeChildAt(i: number) {
 		if (!isNaN(i) && i >= 0 && i < this.numChildren) {
-			let el: Sprite = this.children.splice(i, 1)[0];
+			let el = this.children.splice(i, 1)[0];
 			el.parent = null;
 			el.stage = null;
 		}
 		return this;
 	}
 
-	removeChildren(): Sprite {
-		let children: Sprite[] = this.children;
+	removeChildren() {
+		let children = this.children;
 		for (let d: number = this.numChildren; d--;) {
-			let el: Sprite = children.splice(d, 1)[0];
+			let el = children.splice(d, 1)[0];
 			el.parent = null;
 			el.stage = null;
 		}
@@ -422,17 +437,17 @@ class Sprite extends EventDispatcher {
 	 * @param {String} 名称
 	 * 名称可带前缀：(^=name)表示以name开头，($=name)表示以name结尾，(~=name)表示包含name
 	 */
-	getChildrenByName(name: string): Sprite[] {
-		let result: Sprite[] = [],
-			prefix: string = '';
+	getChildrenByName(name: string) {
+		let result: ISprite[] = [];
+		let prefix: string = '';
 
 		if (/^([\^\$~])=(.+)/.test(name)) {
 			prefix = RegExp.$1;
 			name = RegExp.$2;
 		}
 		for (let d: number = this.numChildren; d--;) {
-			let child: Sprite = this.children[d],
-				childname: string = child.name;
+			let child = this.children[d];
+			let childname = child.name;
 
 			if (prefix) {
 				switch (prefix) {
@@ -462,10 +477,10 @@ class Sprite extends EventDispatcher {
 		return result;
 	}
 
-	getChildrenByType(TypeClass: ClassDecorator): Sprite[] {
-		let result: Sprite[] = [];
+	getChildrenByType(TypeClass: ClassDecorator) {
+		let result: ISprite[] = [];
 		for (let i: number = 0, l: number = this.numChildren; i < l; i++) {
-			let child: Sprite = this.children[i];
+			let child = this.children[i];
 			if (child instanceof TypeClass) {
 				result.push(child);
 			}
@@ -476,7 +491,7 @@ class Sprite extends EventDispatcher {
 	/*
 	 * 初始化拖拽
 	 */
-	enableDrag(rect: Rectangle): Sprite {
+	enableDrag(rect: Rectangle) {
 		let startPos: Pos | null;
 		function touchMoveHandler(this: Sprite, ev: CTouchEvent) {
 			if (startPos && this.stage) {
@@ -522,10 +537,8 @@ class Sprite extends EventDispatcher {
 	/*
 	 * 终止
 	 */
-	disableDrag(): Sprite {
+	disableDrag() {
 		this.removeEventListener('touchstart');
 		return this;
 	}
 };
-
-export default Sprite;

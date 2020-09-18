@@ -1,11 +1,13 @@
-import CEvent from './event/event';
-import CTouchEvent from './event/touchevent';
-import Point from './geom/point';
-import Rectangle from './geom/rectangle';
-import Stage, { StageOption } from './display/stage';
-import Sprite, { HitTestResult } from './display/sprite';
-import TextContent from './display/textcontent';
-import CImage from './display/image';
+import { CImage } from './display/image';
+import { HitTestResult, Sprite } from './display/sprite';
+import { Stage, StageOption } from './display/stage';
+import { TextContent } from './display/textcontent';
+import { CEvent } from './event/event';
+import { CTouchEvent } from './event/touchevent';
+import { Matrix } from './geom/matrix';
+import { Point } from './geom/point';
+
+export { Sprite, Stage, TextContent, CImage, Matrix };
 
 interface Size {
 	width: number;
@@ -138,7 +140,7 @@ function wrapResize(this: CanvasRender): void {
 	});
 }
 
-export default class CanvasRender extends Stage {
+export class CanvasRender extends Stage {
 	constructor(option: any = {}) {
 
 		super(option);
@@ -211,18 +213,4 @@ export default class CanvasRender extends Stage {
 		super.remove();
 		return this;
 	}
-
-	static geom = {
-		Point,
-		Rectangle
-	};
-	static event = {
-		CEvent: Event,
-		CTouchEvent: TouchEvent
-	};
-	static display = {
-		Sprite,
-		Image: CImage,
-		TextContent
-	};
 }

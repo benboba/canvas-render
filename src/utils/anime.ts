@@ -64,7 +64,7 @@ function clear() { // 终止定时器
 	timer = 0;
 }
 
-let AnimeExport = {
+export const Anime = {
 	listen: function (fn: IFn, tgt?: HTMLElement) { // 添加新的逐帧执行方法
 		timerListen.unshift({
 			fn: fn,
@@ -73,7 +73,7 @@ let AnimeExport = {
 		if (!timer) {
 			reg(interval);
 		}
-		return AnimeExport;
+		return Anime;
 	},
 	raf: function (fn: IFn, tgt?: any) { // 添加单次延时执行方法
 		rafListen.unshift({
@@ -83,7 +83,7 @@ let AnimeExport = {
 		if (!timer) {
 			reg(interval);
 		}
-		return AnimeExport;
+		return Anime;
 	},
 	unlisten: function (fn: string | IFn, _tgt?: any) { // 移除指定的逐帧执行方法
 		if (typeof fn === 'function' || typeof fn === 'string') {
@@ -95,7 +95,7 @@ let AnimeExport = {
 				}
 			}
 		}
-		return AnimeExport;
+		return Anime;
 	},
 	/*
 	 * 手动设置fps（每秒执行的帧数）
@@ -118,8 +118,6 @@ let AnimeExport = {
 				reg(interval);
 			}
 		}
-		return AnimeExport;
+		return Anime;
 	}
 };
-
-export default AnimeExport;

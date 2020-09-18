@@ -1,8 +1,8 @@
 /*
  * 使目标对象支持事件绑定、解绑、触发等功能
  */
-import CEvent from '../event/event';
-import { IEventObject } from '../types';
+import { CEvent } from '../event/event';
+import { IEventDispatcher, IEventObject, ISprite } from '../types';
 
 function removeEmpty(arr: string[]): string[] {
 	return arr.filter((val) => !!val);
@@ -17,15 +17,11 @@ function checkNameSpace(ns1: string[], ns2: string[]): boolean {
 	return false;
 }
 
-abstract class EventDispatcher {
-	constructor() {
-		this.evCache = [];
-	}
-
+export abstract class EventDispatcher implements IEventDispatcher {
 	// 事件缓存
-	private evCache: IEventObject[];
+	evCache: IEventObject[] = [];
 
-	addEventListener(eventname: string, callback: IEventObject['callback'], priority: boolean = false, locked: boolean = false): EventDispatcher {
+	addEventListener(eventname: string, callback: IEventObject['callback'], priority: boolean = false, locked: boolean = false) {
 
 		let ev: string[] = eventname.toLowerCase().split('.');
 
@@ -50,7 +46,7 @@ abstract class EventDispatcher {
 		return this;
 	}
 
-	on(eventname: string, callback: IEventObject['callback'], priority: boolean = false, locked: boolean = false): EventDispatcher {
+	on(eventname: string, callback: IEventObject['callback'], priority: boolean = false, locked: boolean = false) {
 		return this.addEventListener(eventname, callback, priority, locked);
 	}
 
@@ -59,7 +55,7 @@ abstract class EventDispatcher {
 	 * @param {String} eventname 事件名称，不传此参数则清空全部事件监听
 	 * @param {Function} callback 解除绑定的方法，不传此参数则解除该事件的全部绑定
 	 */
-	removeEventListener(eventname: string, callback: IEventObject['callback'] | null = null, locked: boolean = false): EventDispatcher {
+	removeEventListener(eventname: string, callback: IEventObject['callback'] | null = null, locked: boolean = false) {
 		let ev: string[] = eventname.toLowerCase().split('.'),
 			namespace: string[] = removeEmpty(ev);
 
@@ -83,7 +79,7 @@ abstract class EventDispatcher {
 		return this;
 	}
 
-	off(eventname: string, callback = null, locked: boolean = false): EventDispatcher {
+	off(eventname: string, callback = null, locked: boolean = false) {
 		return this.removeEventListener(eventname, callback, locked);
 	}
 
@@ -92,7 +88,7 @@ abstract class EventDispatcher {
 	 * @param {String} eventname 事件名称
 	 * @param {Array|Undefined} 附加的参数
 	 */
-	dispatchEvent(_ev: any, ...args: any[]): EventDispatcher {
+	dispatchEvent(_ev: any, ...args: any[]) {
 		let ev: CEvent;
 		if (typeof _ev === 'string') {
 			ev = new CEvent(_ev);
@@ -117,22 +113,20 @@ abstract class EventDispatcher {
 		if (ev.bubble && this.parent) {
 			let parent = this.parent;
 			if (parent.dispatchEvent && typeof parent.dispatchEvent === 'function') {
-				parent.dispatchEvent.apply(parent, args);
+				parent.dispatchEvent.apply(parent, args as Parameters<IEventDispatcher['dispatchEvent']>);
 			}
 		}
 		return this;
 	}
 
-	trigger(...args: any): EventDispatcher {
+	trigger(...args: any) {
 		return this.dispatchEvent.apply(this, args);
 	}
 
-	parent?: any;
+	parent?: ISprite | null;
 
 	destroyEvent(): void {
 		this.evCache.splice(0, this.evCache.length);
 	}
 
 }
-
-export default EventDispatcher;

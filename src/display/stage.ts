@@ -1,10 +1,11 @@
+import { IStage } from 'src/types';
 /*
  * 舞台，Canvas渲染的根元素
  */
 
-import Anime from '../utils/anime';
-import Sprite, { SpriteOption, HitTestResult } from './sprite';
-import Point from '../geom/point';
+import { Point } from '../geom/point';
+import { Anime } from '../utils/anime';
+import { HitTestResult, Sprite, SpriteOption } from './sprite';
 
 export interface StageOption extends SpriteOption {
 	width?: number;
@@ -15,7 +16,7 @@ export interface StageOption extends SpriteOption {
 	debug?: boolean;
 }
 
-class Stage extends Sprite {
+export class Stage extends Sprite implements IStage {
 	constructor(option: StageOption) {
 		super(option);
 
@@ -124,12 +125,10 @@ class Stage extends Sprite {
 	}
 
 	// stage不可以真正被remove
-	remove(): Stage {
+	remove() {
 		this.destroyEvent();
 		this.removeChildren();
 		Anime.unlisten(this.paintFn, null);
 		return this;
 	}
 }
-
-export default Stage;

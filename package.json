@@ -7,7 +7,7 @@
   "author": "<benboba@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "dev": "rollup -c"
+    "build": "rollup -c"
   },
   "devDependencies": {
     "from": "^0.1.7",

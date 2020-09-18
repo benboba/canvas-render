@@ -2,9 +2,9 @@
  * 事件
  */
 
-import CEvent from './event';
+import { CEvent } from './event';
 
-class CTouchEvent extends CEvent {
+export class CTouchEvent extends CEvent {
 	constructor(eventname: string = '', bubble: boolean = false) {
 		super(eventname, bubble);
 	}
@@ -21,5 +21,3 @@ class CTouchEvent extends CEvent {
 	static TAP = 'tap';
 	static CLICK = 'click';
 }
-
-export default CTouchEvent;

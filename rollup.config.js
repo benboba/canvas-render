@@ -11,7 +11,7 @@ export default {
         {
             file: pkg.main,
             format: 'umd',
-            name: 'CanvasRender',
+            name: 'CR',
         },
     ],
     plugins: [typescript()],

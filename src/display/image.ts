@@ -2,10 +2,10 @@
  * 图片类
  */
 
-import CEvent from '../event/event';
-import Sprite, { SpriteOption, HitTestResult } from './sprite';
-import Point from '../geom/point';
-import Rectangle from '../geom/rectangle';
+import { CEvent } from '../event/event';
+import { Point } from '../geom/point';
+import { Rectangle } from '../geom/rectangle';
+import { HitTestResult, Sprite, SpriteOption } from './sprite';
 
 interface ImageOption extends SpriteOption {
 	src?: string;
@@ -19,7 +19,7 @@ interface ImageOption extends SpriteOption {
 
 const imageCache: Record<string, HTMLImageElement> = {};
 
-class CImage extends Sprite {
+export class CImage extends Sprite {
 	constructor(option: ImageOption = {}) {
 		super(option);
 
@@ -186,25 +186,9 @@ class CImage extends Sprite {
 		const clipWidth: number = this.clipWidth;
 		const clipHeight: number = this.clipHeight;
 		if (clipWidth && clipHeight) {
-			if (this.transform) {
-				// 变形之前，首先平移一半的位置
-				ctx.translate(clipWidth / 2, clipHeight / 2);
-				ctx.transform.apply(ctx, this.transform);
-				// 变形之后，平移回一半，使变形中心对应在中心点（可能未必有用）
-				ctx.translate(-clipWidth / 2, -clipHeight / 2);
-			}
 			ctx.drawImage(imageCache[src], this.clipX, this.clipY, clipWidth, clipHeight, 0, 0, this.realWidth, this.realHeight);
 		} else {
-			if (this.transform) {
-				// 变形之前，首先平移一半的位置
-				ctx.translate(this.realWidth / 2, this.realHeight / 2);
-				ctx.transform.apply(ctx, this.transform);
-				// 变形之后，平移回一半，使变形中心对应在中心点（可能未必有用）
-				ctx.translate(-this.realWidth / 2, -this.realHeight / 2);
-			}
 			ctx.drawImage(imageCache[src], 0, 0, this.realWidth, this.realHeight);
 		}
 	}
 }
-
-export default CImage;

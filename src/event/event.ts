@@ -2,7 +2,7 @@
  * 事件
  */
 
-class CEvent {
+export class CEvent {
 	constructor(eventname: string = '', bubble: boolean = false) {
 		this._type = eventname;
 		this._bubble = bubble;
@@ -66,5 +66,3 @@ class CEvent {
 	static ERROR = 'error';
 	static RESIZE = 'resize';
 }
-
-export default CEvent;
