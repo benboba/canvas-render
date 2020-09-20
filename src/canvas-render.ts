@@ -147,8 +147,8 @@ export class CanvasRender extends Stage {
 
 		let canvas = this.canvas;
 		const globalScale = option.global_scale || 2;
-		const width = parseFloat(option.width) || docElem.clientWidth;
-		const height = parseFloat(option.height) || docElem.clientHeight;
+		const width = parseFloat(option.width) || (canvas.parentElement || docElem).clientWidth;
+		const height = parseFloat(option.height) || (canvas.parentElement || docElem).clientHeight;
 
 		this.noResize = option.noResize || false;
 		this.noTouchMove = option.noTouchMove || false;

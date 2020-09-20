@@ -1,8 +1,9 @@
 {
   "name": "canvas-render",
   "version": "1.0.0",
-  "main": "dist/index.js",
-  "module": "dist/index.mjs",
+  "main": "dist/canvas-render.js",
+  "module": "dist/canvas-render.mjs",
+  "types": "dist/canvas-render.d.ts",
   "repository": "git@github.com:benboba/canvas-render.git",
   "author": "<benboba@gmail.com>",
   "license": "MIT",
