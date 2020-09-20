@@ -6,8 +6,9 @@ import { CEvent } from './event/event';
 import { CTouchEvent } from './event/touchevent';
 import { Matrix } from './geom/matrix';
 import { Point } from './geom/point';
+import { Rectangle } from './geom/rectangle';
 
-export { Sprite, Stage, TextContent, CImage, Matrix };
+export { Sprite, Stage, TextContent, CImage as Image, Matrix, Rectangle };
 
 interface Size {
 	width: number;
