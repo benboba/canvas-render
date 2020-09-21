@@ -46,7 +46,7 @@ export interface ISprite extends IEventDispatcher {
     attr(key: string | Record<string, string>, val?: string | null): string | this | null;
     setTransform(newtransform: string): ISprite;
     addedToStage(): void;
-    prepareRender(x: number, y: number, alpha: number): void;
+    prepareRender(): void;
     render(): void;
     hitTest(point: Point, x?: number, y?: number): HitTestResult;
     getHitTestArea(x?: number, y?: number): Rectangle;
@@ -63,7 +63,7 @@ export interface ISprite extends IEventDispatcher {
     getChildAt(i: number): ISprite | null;
     getChildrenByName(name: string): ISprite[];
     getChildrenByType(TypeClass: ClassDecorator): ISprite[];
-    enableDrag(rect: Rectangle): ISprite;
+    enableDrag(rect: Rectangle, size: Point): ISprite;
     disableDrag(): ISprite;
 }
 
@@ -75,7 +75,7 @@ export interface IStage extends ISprite {
     ratioX: number;
     ratioY: number;
     _repaint: boolean;
-    prepareRender(x: number, y: number, alpha: number): void;
+    prepareRender(): void;
     hitTest(point: Point, x?: number, y?: number): HitTestResult;
     paint(): void;
     remove(): IStage;

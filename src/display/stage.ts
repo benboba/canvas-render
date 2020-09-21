@@ -86,7 +86,7 @@ export class Stage extends Sprite implements IStage {
 	 * 1、舞台自身不进行渲染
 	 * 2、舞台在渲染子类前进行一次缩放
 	 */
-	prepareRender(x: number, y: number, alpha: number): void {
+	prepareRender(): void {
 		let ctx = this.ctx;
 		if (!ctx) return;
 
@@ -96,7 +96,7 @@ export class Stage extends Sprite implements IStage {
 		 * 渲染每个子类
 		 */
 		for (let i: number = 0, l: number = this.numChildren; i < l; i++) {
-			this.children[i].prepareRender(x + this.x, y + this.y, alpha * this.alpha);
+			this.children[i].prepareRender();
 		}
 		ctx.restore();
 	}
@@ -120,7 +120,7 @@ export class Stage extends Sprite implements IStage {
 			const canvas = this.canvas;
 			this._repaint = false;
 			this.ctx.clearRect(0, 0, +(canvas.getAttribute('width') as string), +(canvas.getAttribute('height') as string));
-			this.prepareRender(0, 0, 1);
+			this.prepareRender();
 		}
 	}
 

@@ -8,7 +8,7 @@ import { Matrix } from './geom/matrix';
 import { Point } from './geom/point';
 import { Rectangle } from './geom/rectangle';
 
-export { Sprite, Stage, TextContent, CImage as Image, Matrix, Rectangle };
+export { Sprite, Stage, TextContent, CImage as Image, Matrix, Rectangle, Point, CEvent as Event, CTouchEvent as TouchEvent };
 
 interface Size {
 	width: number;
@@ -34,20 +34,15 @@ let touchCache: TouchCache = {
 	moved: false,
 	timeout: false
 };
-let touchTimer: ReturnType<typeof setTimeout>;
+let touchTimer: number;
 
-function wrapTouchStart(this: CanvasRender, ev: TouchEvent): void {
-	if (touchCache.target) return;
-	let _touch = ev.changedTouches[0];
-	const _x: number = _touch.pageX;
-	const _y: number = _touch.pageY;
-	const eventTarget: HitTestResult = this.hitTest(new Point(_x, _y));
+function touchStart(x: number, y: number, eventTarget: HitTestResult) {
 	const touchStartEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHSTART);
 
 	touchStartEv.attr({
 		bubble: true,
-		x: _x,
-		y: _y,
+		x,
+		y,
 		target: eventTarget.target
 	});
 	eventTarget.target!.dispatchEvent(touchStartEv);
@@ -57,9 +52,48 @@ function wrapTouchStart(this: CanvasRender, ev: TouchEvent): void {
 	touchCache.timeout = false;
 
 	clearTimeout(touchTimer);
-	touchTimer = setTimeout(function () {
+	touchTimer = window.setTimeout(function () {
 		touchCache.timeout = true;
 	}, 500);
+}
+
+function wrapTouchStart(this: CanvasRender, ev: TouchEvent): void {
+	if (touchCache.target) return;
+	const _touch = ev.changedTouches[0];
+	const _x: number = _touch.pageX;
+	const _y: number = _touch.pageY;
+	const eventTarget: HitTestResult = this.hitTest(new Point(_x, _y));
+	touchStart(_x, _y, eventTarget);
+}
+
+function wrapMouseStart(this: CanvasRender, ev: MouseEvent): void {
+	if (touchCache.target) return;
+	const _x: number = ev.pageX;
+	const _y: number = ev.pageY;
+	const eventTarget: HitTestResult = this.hitTest(new Point(_x, _y));
+	touchStart(_x, _y, eventTarget);
+}
+
+function touchMove(x: number, y: number): void {
+	let touchMoveEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHMOVE);
+	touchMoveEv.attr({
+		bubble: true,
+		x,
+		y,
+		target: touchCache.target
+	});
+	touchCache.target!.dispatchEvent(touchMoveEv);
+}
+
+function wrapMouseMove(this: CanvasRender, ev: MouseEvent): void {
+	if (!touchCache.target) return;
+
+	touchCache.moved = true;
+
+	if (!this.noTouchMove) {
+		ev.preventDefault();
+		touchMove(ev.pageX, ev.pageY);
+	}
 }
 
 function wrapTouchMove(this: CanvasRender, ev: TouchEvent): void {
@@ -71,15 +105,44 @@ function wrapTouchMove(this: CanvasRender, ev: TouchEvent): void {
 
 	if (!this.noTouchMove) {
 		ev.preventDefault();
-		let touchMoveEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHMOVE);
-		touchMoveEv.attr({
+		touchMove(_touch.pageX, _touch.pageY);
+	}
+}
+
+function touchEnd(x: number, y: number): void {
+	clearTimeout(touchTimer);
+
+	const touchEndEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHEND);
+	touchEndEv.attr({
+		bubble: true,
+		x,
+		y,
+		target: touchCache.target
+	});
+	touchCache.target!.dispatchEvent(touchEndEv);
+
+	if (!touchCache.moved && !touchCache.timeout) {
+		let tapEv: CTouchEvent = new CTouchEvent(CTouchEvent.TAP);
+		tapEv.attr({
 			bubble: true,
-			x: _touch.pageX,
-			y: _touch.pageY,
+			x,
+			y,
 			target: touchCache.target
 		});
-		touchCache.target.dispatchEvent(touchMoveEv);
+		touchCache.target!.dispatchEvent(tapEv);
 	}
+
+	touchCache.target = null;
+	touchCache.moved = false;
+	touchCache.timeout = false;
+}
+
+function wrapMouseEnd(ev: MouseEvent): void {
+	if (!touchCache.target) return;
+
+	ev.preventDefault();
+
+	touchEnd(ev.pageX, ev.pageY);
 }
 
 function wrapTouchEnd(ev: TouchEvent): void {
@@ -87,36 +150,8 @@ function wrapTouchEnd(ev: TouchEvent): void {
 
 	ev.preventDefault();
 
-	let _touch = ev.changedTouches[0],
-		_x: number = _touch.pageX,
-		_y: number = _touch.pageY;
-
-	clearTimeout(touchTimer);
-	touchTimer = 0;
-
-	let touchEndEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHEND);
-	touchEndEv.attr({
-		bubble: true,
-		x: _x,
-		y: _y,
-		target: touchCache.target
-	});
-	touchCache.target.dispatchEvent(touchEndEv);
-
-	if (!touchCache.moved && !touchCache.timeout) {
-		let tapEv: CTouchEvent = new CTouchEvent(CTouchEvent.TAP);
-		tapEv.attr({
-			bubble: true,
-			x: _x,
-			y: _y,
-			target: touchCache.target
-		});
-		touchCache.target.dispatchEvent(tapEv);
-	}
-
-	touchCache.target = null;
-	touchCache.moved = false;
-	touchCache.timeout = false;
+	const _touch = ev.changedTouches[0];
+	touchEnd(_touch.pageX, _touch.pageY);
 }
 
 function wrapClick(this: CanvasRender, ev: MouseEvent): void {
@@ -148,8 +183,10 @@ export class CanvasRender extends Stage {
 
 		let canvas = this.canvas;
 		const globalScale = option.global_scale || 2;
-		const width = parseFloat(option.width) || (canvas.parentElement || docElem).clientWidth;
-		const height = parseFloat(option.height) || (canvas.parentElement || docElem).clientHeight;
+		const elem = canvas.parentElement || docElem;
+		const elemStyles = window.getComputedStyle(elem);
+		const width = parseFloat(option.width) || elem.clientWidth - parseFloat(elemStyles.paddingLeft) - parseFloat(elemStyles.paddingRight);
+		const height = parseFloat(option.height) || elem.clientHeight - parseFloat(elemStyles.paddingTop) - parseFloat(elemStyles.paddingBottom);
 
 		this.noResize = option.noResize || false;
 		this.noTouchMove = option.noTouchMove || false;
@@ -167,6 +204,9 @@ export class CanvasRender extends Stage {
 		canvas.addEventListener('touchmove', wrapTouchMove.bind(this));
 		canvas.addEventListener('touchend', wrapTouchEnd.bind(this));
 		canvas.addEventListener('touchcancel', wrapTouchEnd.bind(this));
+		canvas.addEventListener('mousedown', wrapMouseStart.bind(this));
+		document.documentElement.addEventListener('mousemove', wrapMouseMove.bind(this));
+		document.documentElement.addEventListener('mouseup', wrapMouseEnd.bind(this));
 		canvas.addEventListener('click', wrapClick.bind(this));
 
 		if (!this.noResize && !width && !height) {
@@ -208,6 +248,9 @@ export class CanvasRender extends Stage {
 		canvas.removeEventListener('touchmove', wrapTouchMove.bind(this));
 		canvas.removeEventListener('touchend', wrapTouchEnd);
 		canvas.removeEventListener('touchcancel', wrapTouchEnd);
+		canvas.removeEventListener('mousedown', wrapMouseStart.bind(this));
+		canvas.removeEventListener('mousemove', wrapMouseMove.bind(this));
+		canvas.removeEventListener('mouseup', wrapMouseEnd.bind(this));
 		canvas.removeEventListener('click', wrapClick.bind(this));
 		window.removeEventListener('resize', wrapResize);
 

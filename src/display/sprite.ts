@@ -201,38 +201,32 @@ export class Sprite extends EventDispatcher implements ISprite {
 	 * @param x, y {Number} 偏移量
 	 * @param alpha {Number} 实际透明度
 	 */
-	prepareRender(x: number, y: number, alpha: number): void {
+	prepareRender(): void {
 		let stage = this.stage;
 
 		// 未在场景中，或不可见，则不渲染
 		if (!stage || !this.visible) return;
 
-		x += this.x;
-		y += this.y;
-		alpha *= this.alpha;
-
 		// 完全透明不渲染
-		if (alpha <= 0) {
+		if (this.alpha <= 0) {
 			return;
 		}
 
 		let ctx = stage.ctx;
 
 		ctx.save();
-		ctx.globalAlpha = alpha;
+		ctx.globalAlpha = this.alpha;
 		if (this.transform) {
 			ctx.translate(this.x, this.y);
 			ctx.transform.apply(ctx, this.transform);
 			ctx.translate(-this.x, -this.y);
 		}
-		ctx.translate(x, y);
+		ctx.translate(this.x, this.y);
 		this.render();
 
 		if (this.extraRender) {
 			this.extraRender();
 		}
-
-		ctx.restore();
 
 		/*
 		 * 渲染每个子类
@@ -243,8 +237,10 @@ export class Sprite extends EventDispatcher implements ISprite {
 			if (child.parent !== this) {
 				child.parent = this;
 			}
-			child.prepareRender(x, y, alpha);
+			child.prepareRender();
 		}
+
+		ctx.restore();
 	}
 
 	/*
@@ -257,12 +253,13 @@ export class Sprite extends EventDispatcher implements ISprite {
 			target: null
 		};
 
-		x += this.x;
-		y += this.y;
+		const [a, b, c, d, e, f] = this.transform;
+		const tx = ((x - e) * d - (y - f) * c) / (a * d - b * c);
+		const ty = c === 0 ? (y - f - b * tx) / d : (x - e - tx * a) / c;
 
 		// NOTE：此循环顺序不可逆，从最上面开始判断
 		for (let i: number = this.numChildren; i--;) {
-			let hit_test: HitTestResult = this.children[i].hitTest(point, x, y);
+			let hit_test: HitTestResult = this.children[i].hitTest(point, tx, ty);
 			if (hit_test.target !== null) {
 				return hit_test;
 			}
@@ -294,8 +291,10 @@ export class Sprite extends EventDispatcher implements ISprite {
 			width = Math.max(width, area.width + area.x - x);
 			height = Math.max(height, area.height + area.y - y);
 		}
-
-		return new Rectangle(x, y, width, height);
+		const [a, b, c, d, e, f] = this.transform;
+		const w = a * width + c * height + e;
+		const h = b * width + d * height + f;
+		return new Rectangle(x, y, w, h);
 	}
 
 	appendChild(...children: Sprite[]) {
@@ -491,22 +490,27 @@ export class Sprite extends EventDispatcher implements ISprite {
 	/*
 	 * 初始化拖拽
 	 */
-	enableDrag(rect: Rectangle) {
+	enableDrag(rect: Rectangle, size: Point) {
 		let startPos: Pos | null;
+		const x1 = rect.x;
+		const y1 = rect.y;
+
 		function touchMoveHandler(this: Sprite, ev: CTouchEvent) {
 			if (startPos && this.stage) {
-				let x: number = startPos.x - startPos.touchX + ev.x,
-					y: number = startPos.y - startPos.touchY + ev.y;
+				let x = startPos.x - startPos.touchX + ev.x;
+				let y = startPos.y - startPos.touchY + ev.y;
+				const [a, b, c, d, e, f] = this.transform;
+				const sx = a * size.x + c * size.y + e;
+				const sy = b * size.x + d * size.y + f;
+				const x2 = rect.x + rect.width - sx;
+				const y2 = rect.y + rect.height - sy;
+				const maxX = Math.max(x1, x2);
+				const minX = Math.min(x1, x2);
+				const maxY = Math.max(y1, y2);
+				const minY = Math.min(y1, y2);
 
-				if (rect !== null) {
-					let rect_x = rect.x,
-						rect_y = rect.y,
-						rect_width = rect.width,
-						rect_height = rect.height;
-
-					x = Math.min(Math.max(x, rect_x), rect_x + rect_width);
-					y = Math.min(Math.max(x, rect_y), rect_y + rect_height);
-				}
+				x = Math.min(Math.max(x, minX), maxX);
+				y = Math.min(Math.max(y, minY), maxY);
 
 				this.x = x;
 				this.y = y;
@@ -527,8 +531,7 @@ export class Sprite extends EventDispatcher implements ISprite {
 					touchX: ev.x,
 					touchY: ev.y
 				};
-
-				this.stage!.addEventListener(CTouchEvent.TOUCHMOVE, touchMoveHandler as IEventObject['callback']).addEventListener(CTouchEvent.TOUCHEND, touchEndHandler);
+				this.stage!.addEventListener(CTouchEvent.TOUCHMOVE, touchMoveHandler.bind(this) as IEventObject['callback']).addEventListener(CTouchEvent.TOUCHEND, touchEndHandler);
 			}
 		} as IEventObject['callback']);
 		return this;

@@ -89,12 +89,11 @@ export abstract class EventDispatcher implements IEventDispatcher {
 	 * @param {Array|Undefined} 附加的参数
 	 */
 	dispatchEvent(_ev: any, ...args: any[]) {
-		let ev: CEvent;
+		let ev = _ev as CEvent;
 		if (typeof _ev === 'string') {
 			ev = new CEvent(_ev);
 			ev.target = this;
 		}
-		ev = _ev as CEvent;
 		if (!(ev instanceof CEvent)) {
 			return this;
 		}

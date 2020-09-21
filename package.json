@@ -8,9 +8,11 @@
   "author": "<benboba@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "start": "es-dev-server --app-index dist/canvasrender.html --node-resolve --dedupe --watch --open --port 80 --disable-host-check --host 0.0.0.0 --disableHostCheck true",
     "build": "rollup -c"
   },
   "devDependencies": {
+    "es-dev-server": "^1.57.4",
     "from": "^0.1.7",
     "import": "^0.0.6",
     "rollup": "^2.26.11",

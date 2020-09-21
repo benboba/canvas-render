@@ -6,7 +6,7 @@ import { IFn } from "src/types";
 
 // 获取requestAnimationFrame
 let aFrame = window.requestAnimationFrame;
-let timer: ReturnType<typeof setTimeout>;
+let timer: number;
 let useAframe = !!aFrame; // 是否使用requestAnimationFrame
 const DEFAULT_ITV = Math.round(1000 / 60); // 默认时间间隔
 let useItv = DEFAULT_ITV; // 实际使用的时间间隔
@@ -51,7 +51,7 @@ function reg(fn: IFn) {
 			}
 		});
 	} else {
-		timer = setInterval(fn, useItv);
+		timer = window.setInterval(fn, useItv);
 	}
 }
 

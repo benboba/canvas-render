@@ -152,8 +152,8 @@ export class CImage extends Sprite {
 	}
 
 	getHitTestArea(x: number = 0, y: number = 0): Rectangle {
-		let height: number,
-			width: number;
+		let height: number;
+		let width: number;
 
 		x += this.x;
 		y += this.y;
@@ -165,8 +165,11 @@ export class CImage extends Sprite {
 			width = this.realWidth;
 			height = this.realHeight;
 		}
+		const [a, b, c, d, e, f] = this.transform;
+		const w = a * width + c * height + e;
+		const h = b * width + d * height + f;
 
-		return new Rectangle(x, y, width, height);
+		return new Rectangle(x, y, w, h);
 	}
 
 	render(): void {
