@@ -37,14 +37,13 @@ export class Stage extends Sprite implements IStage {
 
 		let now: number = +new Date,
 			fps: number = 0,
-			len: number = 0,
-			self: Stage = this;
+			len: number = 0;
 
-		this.paintFn = option.debug ? function () {
-			let repaint = self._repaint,
-				_now: number = +new Date;
+		this.paintFn = option.debug ? () => {
+			let repaint = this._repaint;
+			let _now: number = +new Date;
 
-			self.paint();
+			this.paint();
 			if (repaint) {
 				let _fps: number = Math.floor(1000 / (_now - now));
 				fps += _fps, len++;
@@ -55,8 +54,8 @@ export class Stage extends Sprite implements IStage {
 				ctx.fillText('FPS : ' + Math.floor(1000 / (_now - now)) + ' / ' + _average, 10, 30);
 			}
 			now = _now;
-		} : function () {
-			self.paint();
+		} : () => {
+			this.paint();
 		};
 		Anime.listen(this.paintFn);
 	}
@@ -110,7 +109,7 @@ export class Stage extends Sprite implements IStage {
 			return child_hit_test;
 		} else {
 			return {
-				target: this
+				target: this,
 			};
 		}
 	}
@@ -119,7 +118,7 @@ export class Stage extends Sprite implements IStage {
 		if (this._repaint) {
 			const canvas = this.canvas;
 			this._repaint = false;
-			this.ctx.clearRect(0, 0, +(canvas.getAttribute('width') as string), +(canvas.getAttribute('height') as string));
+			this.ctx.clearRect(0, 0, this.width * this.ratioX, this.height * this.ratioY);
 			this.prepareRender();
 		}
 	}

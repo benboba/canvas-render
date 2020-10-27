@@ -40,6 +40,7 @@ export interface ISprite extends IEventDispatcher {
     pointerEvents: boolean;
     parent?: ISprite | null;
     stage?: IStage | null;
+    hitTestArea?: Rectangle;
     extraRender: TEmptyFn | null;
     extraHitTest: IFn<any[], HitTestResult> | null;
     readonly transform: [number, number, number, number, number, number];

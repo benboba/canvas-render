@@ -7,8 +7,9 @@ import { CTouchEvent } from './event/touchevent';
 import { Matrix } from './geom/matrix';
 import { Point } from './geom/point';
 import { Rectangle } from './geom/rectangle';
+import { Anime } from './utils/anime';
 
-export { Sprite, Stage, TextContent, CImage as Image, Matrix, Rectangle, Point, CEvent as Event, CTouchEvent as TouchEvent };
+export { Anime, Sprite, Stage, TextContent, CImage as Image, Matrix, Rectangle, Point, CEvent as Event, CTouchEvent as TouchEvent };
 
 interface Size {
 	width: number;
@@ -17,7 +18,6 @@ interface Size {
 
 interface CanvasRenderOption extends StageOption {
 	global_scale?: number;
-	noResize?: boolean;
 	noTouchMove?: boolean;
 }
 
@@ -38,7 +38,6 @@ let touchTimer: number;
 
 function touchStart(x: number, y: number, eventTarget: HitTestResult) {
 	const touchStartEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHSTART);
-
 	touchStartEv.attr({
 		bubble: true,
 		x,
@@ -59,17 +58,19 @@ function touchStart(x: number, y: number, eventTarget: HitTestResult) {
 
 function wrapTouchStart(this: CanvasRender, ev: TouchEvent): void {
 	if (touchCache.target) return;
+	const rect = (ev.target as HTMLElement).getBoundingClientRect();
 	const _touch = ev.changedTouches[0];
-	const _x: number = _touch.pageX;
-	const _y: number = _touch.pageY;
+	const _x: number = _touch.pageX - rect.x;
+	const _y: number = _touch.pageY - rect.y;
 	const eventTarget: HitTestResult = this.hitTest(new Point(_x, _y));
 	touchStart(_x, _y, eventTarget);
 }
 
 function wrapMouseStart(this: CanvasRender, ev: MouseEvent): void {
 	if (touchCache.target) return;
-	const _x: number = ev.pageX;
-	const _y: number = ev.pageY;
+	const rect = (ev.target as HTMLElement).getBoundingClientRect();
+	const _x = ev.pageX - rect.x;
+	const _y = ev.pageY - rect.y;
 	const eventTarget: HitTestResult = this.hitTest(new Point(_x, _y));
 	touchStart(_x, _y, eventTarget);
 }
@@ -169,36 +170,16 @@ function wrapClick(this: CanvasRender, ev: MouseEvent): void {
 	eventTarget.target!.dispatchEvent(clickEv);
 }
 
-function wrapResize(this: CanvasRender): void {
-	this.resize({
-		width: docElem.clientWidth,
-		height: docElem.clientHeight
-	});
-}
-
 export class CanvasRender extends Stage {
 	constructor(option: any = {}) {
-
 		super(option);
-
-		let canvas = this.canvas;
-		const globalScale = option.global_scale || 2;
-		const elem = canvas.parentElement || docElem;
-		const elemStyles = window.getComputedStyle(elem);
-		const width = parseFloat(option.width) || elem.clientWidth - parseFloat(elemStyles.paddingLeft) - parseFloat(elemStyles.paddingRight);
-		const height = parseFloat(option.height) || elem.clientHeight - parseFloat(elemStyles.paddingTop) - parseFloat(elemStyles.paddingBottom);
-
-		this.noResize = option.noResize || false;
 		this.noTouchMove = option.noTouchMove || false;
-
-		this.width = width;
-		this.height = height;
+		const canvas = this.canvas;
+		const globalScale = option.global_scale || 2;
 		this.ratioX = globalScale;
 		this.ratioY = globalScale;
 
-		canvas.style.cssText += `width:${width}px;height:${height}px;`;
-		canvas.setAttribute('width', `${width * globalScale}`);
-		canvas.setAttribute('height', `${height * globalScale}`);
+		this.calcResize(parseFloat(option.width), parseFloat(option.height));
 
 		canvas.addEventListener('touchstart', wrapTouchStart.bind(this));
 		canvas.addEventListener('touchmove', wrapTouchMove.bind(this));
@@ -208,23 +189,18 @@ export class CanvasRender extends Stage {
 		document.documentElement.addEventListener('mousemove', wrapMouseMove.bind(this));
 		document.documentElement.addEventListener('mouseup', wrapMouseEnd.bind(this));
 		canvas.addEventListener('click', wrapClick.bind(this));
-
-		if (!this.noResize && !width && !height) {
-			window.addEventListener('resize', wrapResize.bind(this));
-		}
 	}
 
-	private noResize: boolean;
 	noTouchMove: boolean;
 
 	protected keyReg = /x|y|name|alpha|visible|pointerEvents|parent|stage|extraRender|extraHitTest|transform|width|height|ratioX|ratioY/;
 
-	resize(option: Size = { width: 0, height: 0 }) {
-		let width: number = option.width || docElem.clientWidth,
-			height: number = option.height || docElem.clientHeight,
-			canvas = this.canvas;
-
-		// docElem.scrollTop = document.body.scrollTop = 0;
+	calcResize(w: number, h: number) {
+		const canvas = this.canvas;
+		const elem = canvas.parentElement || docElem;
+		const elemStyles = window.getComputedStyle(elem);
+		const width = w || elem.clientWidth - parseFloat(elemStyles.paddingLeft) - parseFloat(elemStyles.paddingRight);
+		const height = h || elem.clientHeight - parseFloat(elemStyles.paddingTop) - parseFloat(elemStyles.paddingBottom);
 
 		this.width = width;
 		this.height = height;
@@ -232,7 +208,10 @@ export class CanvasRender extends Stage {
 		canvas.style.cssText += `width:${width}px;height:${height}px;`;
 		canvas.setAttribute('width', `${width * this.ratioX}`);
 		canvas.setAttribute('height', `${height * this.ratioY}`);
+	}
 
+	resize(w: number = 0, h: number = 0) {
+		this.calcResize(w, h);
 		for (let i: number = 0, l: number = this.numChildren; i < l; i++) {
 			this.children[i].dispatchEvent(CEvent.RESIZE);
 		}
@@ -246,13 +225,12 @@ export class CanvasRender extends Stage {
 
 		canvas.removeEventListener('touchstart', wrapTouchStart.bind(this));
 		canvas.removeEventListener('touchmove', wrapTouchMove.bind(this));
-		canvas.removeEventListener('touchend', wrapTouchEnd);
-		canvas.removeEventListener('touchcancel', wrapTouchEnd);
+		canvas.removeEventListener('touchend', wrapTouchEnd.bind(this));
+		canvas.removeEventListener('touchcancel', wrapTouchEnd.bind(this));
 		canvas.removeEventListener('mousedown', wrapMouseStart.bind(this));
-		canvas.removeEventListener('mousemove', wrapMouseMove.bind(this));
-		canvas.removeEventListener('mouseup', wrapMouseEnd.bind(this));
+		document.documentElement.removeEventListener('mousemove', wrapMouseMove.bind(this));
+		document.documentElement.removeEventListener('mouseup', wrapMouseEnd.bind(this));
 		canvas.removeEventListener('click', wrapClick.bind(this));
-		window.removeEventListener('resize', wrapResize);
 
 		super.remove();
 		return this;

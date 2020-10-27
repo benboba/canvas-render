@@ -29,6 +29,7 @@ export interface SpriteOption {
 	pointerEvents?: boolean;
 	extraRender?: TEmptyFn;
 	extraHitTest?: IFn<any[], HitTestResult>;
+	hitTestArea?: Rectangle;
 	transform?: string;
 }
 
@@ -46,6 +47,7 @@ export class Sprite extends EventDispatcher implements ISprite {
 		this.pointerEvents = option.pointerEvents || true;
 		this._extraRender = option.extraRender || null;
 		this._extraHitTest = option.extraHitTest || null;
+		this.hitTestArea = option.hitTestArea;
 		if (option.transform) {
 			this.setTransform(option.transform);
 		}
@@ -98,6 +100,7 @@ export class Sprite extends EventDispatcher implements ISprite {
 	pointerEvents: boolean;
 	parent?: ISprite | null;
 	stage?: IStage | null;
+	hitTestArea?: Rectangle;
 
 	private _extraRender;
 	get extraRender() {
@@ -254,14 +257,26 @@ export class Sprite extends EventDispatcher implements ISprite {
 		};
 
 		const [a, b, c, d, e, f] = this.transform;
-		const tx = ((x - e) * d - (y - f) * c) / (a * d - b * c);
-		const ty = c === 0 ? (y - f - b * tx) / d : (x - e - tx * a) / c;
 
 		// NOTE：此循环顺序不可逆，从最上面开始判断
 		for (let i: number = this.numChildren; i--;) {
-			let hit_test: HitTestResult = this.children[i].hitTest(point, tx, ty);
+			let hit_test: HitTestResult = this.children[i].hitTest(point, x + this.x, y + this.y);
 			if (hit_test.target !== null) {
 				return hit_test;
+			}
+		}
+
+		if (this.hitTestArea) {
+			const w = a * this.hitTestArea.width + c * this.hitTestArea.height + e;
+			const h = b * this.hitTestArea.width + d * this.hitTestArea.height + f;
+			const _x = a * this.hitTestArea.x + c * this.hitTestArea.y + e;
+			const _y = b * this.hitTestArea.x + d * this.hitTestArea.y + f;
+			console.log(this.x, x, _x, w);
+			console.log(this.y, y, _y, h);
+			if (point.hitTest(new Rectangle(this.x + x + _x, this.y + y + _y, w, h))) {
+				return {
+					target: this
+				};
 			}
 		}
 
@@ -499,11 +514,8 @@ export class Sprite extends EventDispatcher implements ISprite {
 			if (startPos && this.stage) {
 				let x = startPos.x - startPos.touchX + ev.x;
 				let y = startPos.y - startPos.touchY + ev.y;
-				const [a, b, c, d, e, f] = this.transform;
-				const sx = a * size.x + c * size.y + e;
-				const sy = b * size.x + d * size.y + f;
-				const x2 = rect.x + rect.width - sx;
-				const y2 = rect.y + rect.height - sy;
+				const x2 = rect.x + rect.width - size.x;
+				const y2 = rect.y + rect.height - size.y;
 				const maxX = Math.max(x1, x2);
 				const minX = Math.min(x1, x2);
 				const maxY = Math.max(y1, y2);
