@@ -49,7 +49,7 @@ export interface ISprite extends IEventDispatcher {
     addedToStage(): void;
     prepareRender(): void;
     render(): void;
-    hitTest(point: Point, x?: number, y?: number): HitTestResult;
+    hitTest(point: Point, x?: number, y?: number, transform?: this['transform']): HitTestResult;
     getHitTestArea(x?: number, y?: number): Rectangle;
     appendChild(...children: ISprite[]): ISprite;
     appendChildAt(el: ISprite, i: number): ISprite;
