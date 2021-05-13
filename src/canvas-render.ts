@@ -87,13 +87,26 @@ function touchMove(x: number, y: number): void {
 }
 
 function wrapMouseMove(this: CanvasRender, ev: MouseEvent): void {
+	const rect = (ev.target as HTMLElement).getBoundingClientRect();
+	const _x = ev.pageX - rect.x;
+	const _y = ev.pageY - rect.y;
+
+	let mouseMoveEv: CTouchEvent = new CTouchEvent(CTouchEvent.MOUSEMOVE);
+	mouseMoveEv.attr({
+		bubble: true,
+		x: _x,
+		y: _y,
+		target: this,
+	});
+	this.dispatchEvent(mouseMoveEv);
+
 	if (!touchCache.target) return;
 
 	touchCache.moved = true;
 
 	if (!this.noTouchMove) {
 		ev.preventDefault();
-		touchMove(ev.pageX, ev.pageY);
+		touchMove(_x, _y);
 	}
 }
 
@@ -106,7 +119,10 @@ function wrapTouchMove(this: CanvasRender, ev: TouchEvent): void {
 
 	if (!this.noTouchMove) {
 		ev.preventDefault();
-		touchMove(_touch.pageX, _touch.pageY);
+		const rect = (ev.target as HTMLElement).getBoundingClientRect();
+		const _x = _touch.pageX - rect.x;
+		const _y = _touch.pageY - rect.y;
+		touchMove(_x, _y);
 	}
 }
 
@@ -143,7 +159,10 @@ function wrapMouseEnd(ev: MouseEvent): void {
 
 	ev.preventDefault();
 
-	touchEnd(ev.pageX, ev.pageY);
+	const rect = (ev.target as HTMLElement).getBoundingClientRect();
+	const _x = ev.pageX - rect.x;
+	const _y = ev.pageY - rect.y;
+	touchEnd(_x, _y);
 }
 
 function wrapTouchEnd(ev: TouchEvent): void {
@@ -152,12 +171,16 @@ function wrapTouchEnd(ev: TouchEvent): void {
 	ev.preventDefault();
 
 	const _touch = ev.changedTouches[0];
-	touchEnd(_touch.pageX, _touch.pageY);
+	const rect = (ev.target as HTMLElement).getBoundingClientRect();
+	const _x = _touch.pageX - rect.x;
+	const _y = _touch.pageY - rect.y;
+	touchEnd(_x, _y);
 }
 
 function wrapClick(this: CanvasRender, ev: MouseEvent): void {
-	const _x = ev.pageX;
-	const _y = ev.pageY;
+	const rect = (ev.target as HTMLElement).getBoundingClientRect();
+	const _x = ev.pageX - rect.x;
+	const _y = ev.pageY - rect.y;
 	const eventTarget = this.hitTest(new Point(_x, _y));
 	const clickEv = new CTouchEvent(CTouchEvent.CLICK);
 

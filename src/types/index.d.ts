@@ -35,6 +35,7 @@ export interface ISprite extends IEventDispatcher {
     name: string;
     x: number;
     y: number;
+    draging: boolean;
     alpha: number;
     visible: boolean;
     pointerEvents: boolean;

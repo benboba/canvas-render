@@ -57,11 +57,6 @@ export class CEvent {
 	// 事件常量
 	static ENTER_FRAME = 'enter_frame'; // 每次渲染时触发
 	static ADDED_TO_STAGE = 'added_to_stage'; // 插入场景时触发
-	static TOUCHSTART = 'touchstart';
-	static TOUCHMOVE = 'touchmove';
-	static TOUCHEND = 'touchend';
-	static TAP = 'tap';
-	static CLICK = 'click';
 	static LOAD = 'load';
 	static ERROR = 'error';
 	static RESIZE = 'resize';

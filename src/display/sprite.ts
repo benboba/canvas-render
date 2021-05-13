@@ -101,6 +101,7 @@ export class Sprite extends EventDispatcher implements ISprite {
 	parent?: ISprite | null;
 	stage?: IStage | null;
 	hitTestArea?: Rectangle;
+	draging = false;
 
 	private _extraRender;
 	get extraRender() {
@@ -507,10 +508,12 @@ export class Sprite extends EventDispatcher implements ISprite {
 	 */
 	enableDrag(rect: Rectangle, size: Point) {
 		let startPos: Pos | null;
+		this.draging = true;
 		const x1 = rect.x;
 		const y1 = rect.y;
 
 		function touchMoveHandler(this: Sprite, ev: CTouchEvent) {
+			if (!this.draging) return;
 			if (startPos && this.stage) {
 				let x = startPos.x - startPos.touchX + ev.x;
 				let y = startPos.y - startPos.touchY + ev.y;
@@ -537,7 +540,7 @@ export class Sprite extends EventDispatcher implements ISprite {
 
 		function touchEndHandler(this: Sprite) {
 			startPos = null;
-			this.removeEventListener(CTouchEvent.TOUCHMOVE, touchMoveHandler as IEventObject['callback']).removeEventListener(CTouchEvent.TOUCHEND, touchEndHandler);
+			this.stage!.removeEventListener(CTouchEvent.TOUCHMOVE, touchMoveHandler as IEventObject['callback']).removeEventListener(CTouchEvent.TOUCHEND, touchEndHandler);
 		}
 
 		this.addEventListener('touchstart', function(this: Sprite, ev: CTouchEvent) {
@@ -558,6 +561,7 @@ export class Sprite extends EventDispatcher implements ISprite {
 	 * 终止
 	 */
 	disableDrag() {
+		this.draging = false;
 		this.removeEventListener('touchstart');
 		return this;
 	}

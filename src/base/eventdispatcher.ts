@@ -107,7 +107,6 @@ export abstract class EventDispatcher implements IEventDispatcher {
 				}
 			}
 		}
-
 		// 判断事件是否冒泡
 		if (ev.bubble && this.parent) {
 			let parent = this.parent;

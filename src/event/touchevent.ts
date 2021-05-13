@@ -16,6 +16,7 @@ export class CTouchEvent extends CEvent {
 
 	// 事件常量
 	static TOUCHSTART = 'touchstart';
+	static MOUSEMOVE = 'mousemove';
 	static TOUCHMOVE = 'touchmove';
 	static TOUCHEND = 'touchend';
 	static TAP = 'tap';
