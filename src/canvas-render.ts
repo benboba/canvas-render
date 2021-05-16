@@ -126,7 +126,7 @@ function wrapTouchMove(this: CanvasRender, ev: TouchEvent): void {
 	}
 }
 
-function touchEnd(x: number, y: number): void {
+function touchEnd(x: number, y: number, which?: number): void {
 	clearTimeout(touchTimer);
 
 	const touchEndEv: CTouchEvent = new CTouchEvent(CTouchEvent.TOUCHEND);
@@ -134,6 +134,7 @@ function touchEnd(x: number, y: number): void {
 		bubble: true,
 		x,
 		y,
+		which,
 		target: touchCache.target
 	});
 	touchCache.target!.dispatchEvent(touchEndEv);
@@ -144,6 +145,7 @@ function touchEnd(x: number, y: number): void {
 			bubble: true,
 			x,
 			y,
+			which,
 			target: touchCache.target
 		});
 		touchCache.target!.dispatchEvent(tapEv);
@@ -162,7 +164,7 @@ function wrapMouseEnd(ev: MouseEvent): void {
 	const rect = (ev.target as HTMLElement).getBoundingClientRect();
 	const _x = ev.pageX - rect.x;
 	const _y = ev.pageY - rect.y;
-	touchEnd(_x, _y);
+	touchEnd(_x, _y, ev.which);
 }
 
 function wrapTouchEnd(ev: TouchEvent): void {
@@ -188,6 +190,7 @@ function wrapClick(this: CanvasRender, ev: MouseEvent): void {
 		bubble: true,
 		x: _x,
 		y: _y,
+		which: ev.which,
 		target: eventTarget.target
 	});
 	eventTarget.target!.dispatchEvent(clickEv);

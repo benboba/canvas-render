@@ -8,7 +8,7 @@ export class CEvent {
 		this._bubble = bubble;
 	}
 
-	protected keyReg = /type|bubble|target/;
+	protected keyReg = /type|bubble|target|which/;
 
 	private _type: string;
 	get type(): string {
@@ -25,6 +25,8 @@ export class CEvent {
 	set bubble(_b: boolean) {
 		this._bubble = _b;
 	}
+
+	which?: number;
 
 	target: any;
 

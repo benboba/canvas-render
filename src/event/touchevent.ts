@@ -9,7 +9,7 @@ export class CTouchEvent extends CEvent {
 		super(eventname, bubble);
 	}
 
-	protected keyReg = /type|bubble|target|x|y|pageX|pageY/;
+	protected keyReg = /type|bubble|target|which|x|y|pageX|pageY/;
 
 	x: number = 0;
 	y: number = 0;
