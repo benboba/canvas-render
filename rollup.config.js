@@ -2,7 +2,7 @@ import typescript from 'rollup-plugin-typescript2';
 import pkg from './package.json';
 
 export default {
-    input: './src/canvas-render.ts',
+    input: './src/index.ts',
     output: [
         {
             file: pkg.module,
@@ -11,7 +11,7 @@ export default {
         {
             file: pkg.main,
             format: 'umd',
-            name: 'CR',
+            name: 'CanvasRender',
         },
     ],
     plugins: [typescript()],

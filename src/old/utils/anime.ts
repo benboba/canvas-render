@@ -2,7 +2,7 @@
  * raf方法，用于逐帧渲染
  */
 
-import { IFn } from "src/types";
+import { IFn } from "../types";
 
 // 获取requestAnimationFrame
 let aFrame = window.requestAnimationFrame;

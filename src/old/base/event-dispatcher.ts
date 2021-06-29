@@ -1,8 +1,9 @@
 /*
  * 使目标对象支持事件绑定、解绑、触发等功能
  */
+import type { Sprite } from '../display/sprite';
 import { CEvent } from '../event/event';
-import { IEventDispatcher, IEventObject, ISprite } from '../types';
+import { IEventObject } from '../types';
 
 function removeEmpty(arr: string[]): string[] {
 	return arr.filter((val) => !!val);
@@ -17,7 +18,7 @@ function checkNameSpace(ns1: string[], ns2: string[]): boolean {
 	return false;
 }
 
-export abstract class EventDispatcher implements IEventDispatcher {
+export abstract class EventDispatcher {
 	// 事件缓存
 	evCache: IEventObject[] = [];
 
@@ -111,7 +112,7 @@ export abstract class EventDispatcher implements IEventDispatcher {
 		if (ev.bubble && this.parent) {
 			let parent = this.parent;
 			if (parent.dispatchEvent && typeof parent.dispatchEvent === 'function') {
-				parent.dispatchEvent.apply(parent, args as Parameters<IEventDispatcher['dispatchEvent']>);
+				parent.dispatchEvent.apply(parent, args as Parameters<EventDispatcher['dispatchEvent']>);
 			}
 		}
 		return this;
@@ -121,7 +122,7 @@ export abstract class EventDispatcher implements IEventDispatcher {
 		return this.dispatchEvent.apply(this, args);
 	}
 
-	parent?: ISprite | null;
+	parent?: Sprite | null;
 
 	destroyEvent(): void {
 		this.evCache.splice(0, this.evCache.length);

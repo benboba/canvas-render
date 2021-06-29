@@ -194,6 +194,7 @@ function wrapClick(this: CanvasRender, ev: MouseEvent): void {
 		target: eventTarget.target
 	});
 	eventTarget.target!.dispatchEvent(clickEv);
+	ev.preventDefault();
 }
 
 export class CanvasRender extends Stage {

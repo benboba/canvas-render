@@ -1,4 +1,4 @@
-import { IStage } from 'src/types';
+import { IStage } from '../types';
 /*
  * 舞台，Canvas渲染的根元素
  */
