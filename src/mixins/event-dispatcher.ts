@@ -6,21 +6,21 @@ import { TBaseObj } from '../types';
 import type { IChildNode } from './child-node';
 import type { IParentNode } from './parent-node';
 
-export interface IEventObject {
+export interface IEventObject<T extends CREvent = CREvent> {
 	type: string; // 事件类型
 	namespace: string[]; // 命名空间
-	callback: (ev: CREvent) => void; // 回调
+	callback: (ev: T) => void; // 回调
 }
 
 const removeEmpty = (arr: string[]) => arr.filter((val) => !!val);
 const checkNameSpace = (ns1: string[], ns2: string[]) => ns1.some(ni => ns2.includes(ni));
 
 export interface IEventDispatcher extends IChildNode, IParentNode {
-	on(eventname: string, callback: IEventObject['callback'], option?: {
+	on<T extends CREvent = CREvent>(eventname: string, callback: IEventObject<T>['callback'], option?: {
         capture?: boolean;
     }): void;
-	off(eventname: string, callback?: IEventObject['callback']): void;
-	trigger(ev: CREvent | string): void;
+	off<T extends CREvent = CREvent>(eventname: string, callback?: IEventObject<T>['callback']): void;
+	trigger<T extends CREvent = CREvent>(ev: T | string): void;
 	parent: IEventDispatcher | null;
 }
 

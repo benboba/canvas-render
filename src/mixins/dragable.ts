@@ -1,63 +1,72 @@
+import type { Sprite } from '../element/sprite';
+import type { CRTouchEvent } from '../module/events/touch';
+import type { ICoodinate, IRectangle } from '../types';
+import type { IEventDispatcher } from './event-dispatcher';
 
-	/*
-	 * 初始化拖拽
-	 */
-	enableDrag(rect: Rectangle, size: Point) {
-		let startPos: Pos | null;
-		this.draging = true;
-		const x1 = rect.x;
-		const y1 = rect.y;
+export interface IDragable {
+	enableDrag(rect?: IRectangle): void;
+	disableDrag(): void;
+}
 
-		function touchMoveHandler(this: Sprite, ev: CTouchEvent) {
-			if (!this.draging) return;
-			if (startPos && this.stage) {
-				let x = startPos.x - startPos.touchX + ev.x;
-				let y = startPos.y - startPos.touchY + ev.y;
-				
-				const [a, b, c, d, e, f] = this.transform;
-				const w = a * size.x + c * size.y + e;
-				const h = b * size.x + d * size.y + f;
+export const mixinDrag = <T extends Sprite & IEventDispatcher>(target: T): T & IDragable => {
+	let draging = false;
+	let startPos: ICoodinate | null = null;
+	let startTouchPos: ICoodinate | null = null;
 
-				const x2 = rect.x + rect.width - w;
-				const y2 = rect.y + rect.height - h;
-				const maxX = Math.max(x1, x2);
-				const minX = Math.min(x1, x2);
-				const maxY = Math.max(y1, y2);
-				const minY = Math.min(y1, y2);
-
-				x = Math.min(Math.max(x, minX), maxX);
-				y = Math.min(Math.max(y, minY), maxY);
-
-				this.x = x;
-				this.y = y;
-				this.repaint = true;
-			}
+	function touchMoveHandler(this: T, ev: CRTouchEvent) {
+		if (!draging) return;
+		if (startPos && startTouchPos && this.stage) {
+			this.x = startPos.x - startTouchPos.x + ev.x;
+			this.y = startPos.y - startTouchPos.y + ev.y;
+			this.stage.repaint();
 		}
-
-		function touchEndHandler(this: Sprite) {
-			startPos = null;
-			this.stage!.removeEventListener(CTouchEvent.TOUCHMOVE, touchMoveHandler as IEventObject['callback']).removeEventListener(CTouchEvent.TOUCHEND, touchEndHandler);
-		}
-
-		this.addEventListener('touchstart', function(this: Sprite, ev: CTouchEvent) {
-			if (!startPos) {
-				startPos = {
-					x: this.x,
-					y: this.y,
-					touchX: ev.x,
-					touchY: ev.y
-				};
-				this.stage!.addEventListener(CTouchEvent.TOUCHMOVE, touchMoveHandler.bind(this) as IEventObject['callback']).addEventListener(CTouchEvent.TOUCHEND, touchEndHandler);
-			}
-		} as IEventObject['callback']);
-		return this;
 	}
 
-	/*
-	 * 终止
-	 */
-	disableDrag() {
-		this.draging = false;
-		this.removeEventListener('touchstart');
-		return this;
+	function touchEndHandler(this: Sprite) {
+		startPos = null;
+		startTouchPos = null;
+		this.stage!.off('touchmove', touchMoveHandler);
+		this.stage!.off('touchend', touchEndHandler);
 	}
+
+	Object.defineProperties(target, {
+		enableDrag: {
+			value: function(this: T, rect: IRectangle = {
+				x: -Infinity,
+				y: -Infinity,
+				width: Infinity,
+				height: Infinity,
+			}) {
+
+				draging = true;
+				const x1 = rect.x;
+				const y1 = rect.y;
+
+				this.on('touchstart', (ev: CRTouchEvent) => {
+					if (this.stage && !startPos) {
+						startPos = {
+							x: this.x,
+							y: this.y,
+						};
+						startTouchPos = {
+							x: ev.x,
+							y: ev.y,
+						};
+						this.stage.on('touchmove', touchMoveHandler.bind(this));
+						this.stage.on('touchend', touchEndHandler);
+					}
+				});
+			},
+			disableDrag: {
+				value: function(this: T) {
+					draging = false;
+					startPos = null;
+					startTouchPos = null;
+					this.off('touchstart');
+					return this;
+				}
+			}
+		}
+	});
+	return target as T & IDragable;
+};

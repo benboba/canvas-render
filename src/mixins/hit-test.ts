@@ -1,61 +1,58 @@
+import { Sprite } from '../element/sprite';
+import { ICoodinate } from '../types/geom';
 
-	hitTest(point: Point, x: number = 0, y: number = 0, transform = [1, 0, 0, 1, 0, 0]): HitTestResult {
-		if (!this.stage || !this.visible || !this.pointerEvents) return {
-			target: null
-		};
+export interface IHitTestResult {
+	target: Sprite | null;
+}
 
-		const [a, b, c, d, e, f] = transform;
-		const _x = this.x * a + this.y * c + e;
-		const _y = this.x * c + this.y * d + f;
+export interface IHitTest {
+	hitTestPoint(point: ICoodinate): IHitTestResult;
+	hitTest(target: Sprite): IHitTestResult;
+}
 
-		// NOTE：此循环顺序不可逆，从最上面开始判断
-		for (let i: number = this.numChildren; i--;) {
-			let hit_test: HitTestResult = this.children[i].hitTest(point, x + _x, y + _y, this.transform);
-			if (hit_test.target !== null) {
-				return hit_test;
-			}
-		}
-
-		if (this.hitTestArea) {
-			const w = a * this.hitTestArea.width + c * this.hitTestArea.height + e;
-			const h = b * this.hitTestArea.width + d * this.hitTestArea.height + f;
-			const x1 = a * this.hitTestArea.x + c * this.hitTestArea.y + e;
-			const y1 = b * this.hitTestArea.x + d * this.hitTestArea.y + f;
-			if (point.hitTest(new Rectangle(_x + x + x1, _y + y + y1, w, h))) {
-				return {
-					target: this
+export const mixinHitTest = <T extends Sprite & IHitTest>(target: T): T & IHitTest => {
+	Object.defineProperties(target, {
+		hitTestPoint: {
+			value: function(this: T, point: ICoodinate) {
+				// 未在场景中，或不可见，直接返回错误
+				if (!this.stage || !this.visible) return {
+					target: null
 				};
-			}
-		}
 
-		if (this.extraHitTest) {
-			let extra_test: HitTestResult = this.extraHitTest(point, x, y, transform);
-			if (extra_test && extra_test.target !== null) {
-				return extra_test;
-			}
-		}
+				// NOTE：此循环顺序不可逆，从最上面开始判断
+				for (let i: number = this.children.length; i--;) {
+					let hit_test: IHitTestResult = this.children[i].hitTestPoint(point);
+					if (hit_test.target !== null) {
+						return hit_test;
+					}
+				}
 
-		return {
-			target: null
-		};
-	}
+				return {
+					target: null
+				};
+			},
+		},
+		hitTest: {
+			value: function(this: T, target: Sprite) {
+				// 未在场景中，或不可见，直接返回错误
+				if (!this.stage || !this.visible) return {
+					target: null
+				};
 
-	getHitTestArea(x: number = 0, y: number = 0): Rectangle {
-		let width: number = 0,
-			height: number = 0;
+				// NOTE：此循环顺序不可逆，从最上面开始判断
+				for (let i: number = this.children.length; i--;) {
+					let hit_test: IHitTestResult = this.children[i].hitTest(target);
+					if (hit_test.target !== null) {
+						return hit_test;
+					}
+				}
 
-		x += this.x;
-		y += this.y;
+				return {
+					target: null
+				};
+			},
+		},
+	});
 
-		for (let i: number = this.numChildren; i--;) {
-			let area: Rectangle = this.children[i].getHitTestArea(x, y);
-			x = Math.min(x, area.x);
-			y = Math.min(y, area.y);
-			width = Math.max(width, area.width + area.x - x);
-			height = Math.max(height, area.height + area.y - y);
-		}
-		const [a, b, c, d, e, f] = this.transform;
-		const w = a * width + c * height + e;
-		const h = b * width + d * height + f;
-		return new Rectangle(x, y, w, h);
-	}
+	return target as T & IHitTest;
+};

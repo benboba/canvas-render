@@ -7,15 +7,19 @@ import type { IAttrNode } from '../mixins/attr';
 import { mixinAttr } from '../mixins/attr';
 import type { IChildNode } from '../mixins/child-node';
 import { mixinChild } from '../mixins/child-node';
+import type { IDragable } from '../mixins/dragable';
+import { mixinDrag } from '../mixins/dragable';
 import type { IEventDispatcher } from '../mixins/event-dispatcher';
 import { mixinEvent } from '../mixins/event-dispatcher';
+import type { IHitTest } from '../mixins/hit-test';
+import { mixinHitTest } from '../mixins/hit-test';
 import type { IParentNode } from '../mixins/parent-node';
 import { mixinParent } from '../mixins/parent-node';
 import type { IStyleNode } from '../mixins/style';
 import { mixinStyle } from '../mixins/style';
 import type { Stage } from './stage';
 
-export interface Sprite extends IParentNode, IChildNode, IEventDispatcher, IAttrNode, IStyleNode {
+export interface Sprite extends IParentNode, IChildNode, IEventDispatcher, IAttrNode, IStyleNode, IDragable, IHitTest {
 	name: string;
 	children: Sprite[];
 	parent: Sprite | Stage | null;
@@ -24,6 +28,9 @@ export interface Sprite extends IParentNode, IChildNode, IEventDispatcher, IAttr
 export class Sprite {
 	type = NodeType.Sprite;
 	visible = true;
+	x = 0;
+	y = 0;
+	transform: string | null = null;
 
 	constructor() {
 		mixinChild(this);
@@ -31,6 +38,8 @@ export class Sprite {
 		mixinEvent(this);
 		mixinAttr(this);
 		mixinStyle(this);
+		mixinDrag(this);
+		mixinHitTest(this);
 	}
 
 	get stage(): Stage | null {
@@ -72,11 +81,10 @@ export class Sprite {
 		if (!stage) return;
 		const ctx = stage.ctx;
 		ctx.save();
-		ctx.translate(this.getStyle('left') ?? 0, this.getStyle('top') ?? 0);
+		ctx.translate(this.x, this.y);
 		ctx.globalAlpha = this.getStyle('opacity') ?? 1;
-		const transform = this.getStyle('transform');
-		if (transform) {
-			ctx.transform(...transform);
+		if (this.transform) {
+			// ctx.transform(...transform);
 		}
 	}
 
